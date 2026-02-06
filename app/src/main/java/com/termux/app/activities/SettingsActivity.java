@@ -6,10 +6,17 @@ import android.os.Environment;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
+import androidx.viewpager2.adapter.FragmentStateAdapter;
+import androidx.viewpager2.widget.ViewPager2;
 
+import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.tabs.TabLayoutMediator;
 import com.termux.R;
+import com.termux.app.fragments.settings.BrainFragment;
 import com.termux.shared.activities.ReportActivity;
 import com.termux.shared.file.FileUtils;
 import com.termux.shared.models.ReportInfo;
@@ -35,12 +42,22 @@ public class SettingsActivity extends AppCompatActivity {
         AppCompatActivityUtils.setNightMode(this, NightMode.getAppNightMode().getName(), true);
 
         setContentView(R.layout.activity_settings);
-        if (savedInstanceState == null) {
-            getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.settings, new RootPreferencesFragment())
-                .commit();
-        }
+
+        TabLayout tabLayout = findViewById(R.id.settings_tab_layout);
+        ViewPager2 viewPager = findViewById(R.id.settings_view_pager);
+
+        viewPager.setAdapter(new SettingsPagerAdapter(this));
+        viewPager.setOffscreenPageLimit(1);
+
+        new TabLayoutMediator(tabLayout, viewPager,
+            (tab, position) -> {
+                if (position == 0) {
+                    tab.setText(R.string.tab_ui_settings);
+                } else {
+                    tab.setText(R.string.tab_brain);
+                }
+            }
+        ).attach();
 
         AppCompatActivityUtils.setToolbar(this, com.termux.shared.R.id.toolbar);
         AppCompatActivityUtils.setShowBackButtonInActionBar(this, true);
@@ -50,6 +67,27 @@ public class SettingsActivity extends AppCompatActivity {
     public boolean onSupportNavigateUp() {
         onBackPressed();
         return true;
+    }
+
+    private static class SettingsPagerAdapter extends FragmentStateAdapter {
+        public SettingsPagerAdapter(FragmentActivity fa) {
+            super(fa);
+        }
+
+        @NonNull
+        @Override
+        public Fragment createFragment(int position) {
+            if (position == 0) {
+                return new RootPreferencesFragment();
+            } else {
+                return new BrainFragment();
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            return 2;
+        }
     }
 
     public static class RootPreferencesFragment extends PreferenceFragmentCompat {
